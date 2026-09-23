@@ -1,0 +1,6 @@
+.env
+.claude/
+jdk-27.jdk/
+.idea/
+target/
+setup.sh
