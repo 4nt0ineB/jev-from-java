@@ -7,7 +7,10 @@ public sealed interface Outcome {
     /** Not a request at all: a typo, keyboard mash, or noise. */
     record NotUnderstood() implements Outcome {}
 
-    /** A request, but Jev is not sure which one; ask the user to rephrase instead of guessing. */
+    /**
+     * A request, but Jev is not sure which one; ask the user to rephrase instead of guessing. {@code confidence} is
+     * the intent choice's confidence, or in multi mode the probability that the message asks for {@code best}.
+     */
     record Unsure(Intent best, Probability confidence) implements Outcome {}
 
     /** A request none of the known intents covers. */

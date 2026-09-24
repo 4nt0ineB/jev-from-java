@@ -52,8 +52,9 @@ void main() throws IOException {
             }
             var now = LocalDateTime.now(clock);
             var candidates = Candidates.of(message, now.toLocalDate());
-            var call = ask(ctx, jev, price, message, Assistant.questions(candidates));
-            ctx.html(assistantPage.render(message, candidates, call.result(), call.cost(), call.took(), call.stats(), now));
+            var mode = "multi".equals(ctx.formParam("mode")) ? Assistant.Mode.MULTI : Assistant.Mode.SINGLE;
+            var call = ask(ctx, jev, price, message, Assistant.questions(candidates, mode));
+            ctx.html(assistantPage.render(message, mode, candidates, call.result(), call.cost(), call.took(), call.stats(), now));
         });
     }).start(Integer.getInteger("port", 7070));
 }

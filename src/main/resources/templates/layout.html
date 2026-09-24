@@ -65,7 +65,11 @@
 {#insert /}
 <script>
   document.querySelectorAll('.examples button').forEach(b =>
-    b.addEventListener('click', () => { document.getElementById('message').value = b.dataset.text; }));
+    b.addEventListener('click', () => {
+      document.getElementById('message').value = b.dataset.text;
+      const mode = document.querySelector('input[name=mode][value=' + (b.dataset.mode || 'single') + ']');
+      if (mode) mode.checked = true;
+    }));
 </script>
 </body>
 </html>

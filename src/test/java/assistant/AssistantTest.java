@@ -61,7 +61,7 @@ class AssistantTest {
 
     @Test
     void asksOnlySlotsThatHaveCandidates() {
-        var questions = Assistant.questions(Candidates.of("réveille-moi à 7h", TODAY));
+        var questions = Assistant.questions(Candidates.of("réveille-moi à 7h", TODAY), Assistant.Mode.SINGLE);
 
         assertEquals(Set.of("intelligible", "intent", "alarm_time", "event_time"), questions.keySet());
     }
@@ -104,13 +104,53 @@ class AssistantTest {
         assertFalse(assistant.value(Assistant.ALARM_TIME).isPresent());
     }
 
+    @Test
+    void multiAddsOneNoulPerHandler() {
+        var questions = Assistant.questions(Candidates.of("", TODAY), Assistant.Mode.MULTI);
+
+        assertEquals(Set.of("intelligible", "intent", "asks_alarm_set", "asks_weather_query", "asks_iot_hue_lightchange",
+            "asks_calendar_set"), questions.keySet());
+    }
+
+    @Test
+    void multiRunsEveryClearYesAndFlagsTheUnsure() {
+        var answers = answers("alarm_set", 0.5, 0.99,
+            Map.of("alarm_time", "7h", "event_time", "none", "alarm_date", "none", "weather_date", "demain",
+                "event_date", "none"));
+        answers.put("asks_alarm_set", new Answer.Noul(new Probability(0.9)));
+        answers.put("asks_weather_query", new Answer.Noul(new Probability(0.8)));
+        answers.put("asks_iot_hue_lightchange", new Answer.Noul(new Probability(0.5)));
+        answers.put("asks_calendar_set", new Answer.Noul(new Probability(0.1)));
+
+        var outcomes = Assistant.of(answers, Candidates.of("réveille-moi à 7h et météo de demain", TODAY)).outcomes(NOW);
+
+        assertEquals(List.of(
+            new Outcome.Execute(new Command.SetAlarm(TODAY.plusDays(1), LocalTime.of(7, 0))),
+            new Outcome.Unsure(Intent.IOT_HUE_LIGHTCHANGE, new Probability(0.5)),
+            new Outcome.Execute(new Command.QueryWeather(TODAY.plusDays(1), Optional.empty()))), outcomes);
+    }
+
+    @Test
+    void multiWithNoRequestedHandlerFallsBackToTheIntent() {
+        var answers = answers("play_music", 0.9, 0.99, Map.of());
+        Assistant.HANDLED.keySet().forEach(i -> answers.put(Assistant.asksId(i), new Answer.Noul(new Probability(0.05))));
+
+        var outcomes = Assistant.of(answers, Candidates.of("joue du jazz", TODAY)).outcomes(NOW);
+
+        assertEquals(List.of(new Outcome.Unhandled(Intent.PLAY_MUSIC)), outcomes);
+    }
+
     /** Fake Jev answers; {@code slots} must cover every slot that has candidates, as the real API would. */
     private static Assistant read(String message, String intent, double confidence, double intelligible,
                                   Map<String, String> slots) {
+        return Assistant.of(answers(intent, confidence, intelligible, slots), Candidates.of(message, TODAY));
+    }
+
+    private static Map<String, Answer> answers(String intent, double confidence, double intelligible, Map<String, String> slots) {
         var answers = new HashMap<String, Answer>();
         answers.put("intelligible", new Answer.Noul(new Probability(intelligible)));
         answers.put("intent", new Answer.Choice(intent, Map.of(intent, new Probability(confidence)), new Probability(confidence)));
         slots.forEach((id, pick) -> answers.put(id, new Answer.Choice(pick, Map.of(), new Probability(1))));
-        return Assistant.of(answers, Candidates.of(message, TODAY));
+        return answers;
     }
 }

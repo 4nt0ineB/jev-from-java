@@ -17,39 +17,43 @@ import java.util.Locale;
 public final class AssistantPage {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.ENGLISH);
 
+    /** One thing the assistant does or says; {@code command} is null unless it runs one. */
+    public record Action(String kind, String headline, Command command) {}
+
     /** One row of the slot table: what code found, what Jev picked, and whether the chosen intent reads it. */
     public record SlotRow(String label, List<String> found, String picked, boolean used) {}
 
     private final Template template = Views.template("assistant");
 
     public String empty(SessionStats stats) {
-        return page("", stats).render();
+        return page("", Assistant.Mode.SINGLE, stats).render();
     }
 
     /** {@code cost} and {@code took} describe this call; they are already included in {@code stats}. */
-    public String render(String message, Candidates candidates, Result result, BigDecimal cost, Duration took,
-                         SessionStats stats, LocalDateTime now) {
-        var page = page(message, stats).data("cost", cost).data("took", took);
+    public String render(String message, Assistant.Mode mode, Candidates candidates, Result result, BigDecimal cost,
+                         Duration took, SessionStats stats, LocalDateTime now) {
+        var page = page(message, mode, stats).data("cost", cost).data("took", took);
         if (!(result instanceof Result.Success(var response))) {
             return page.data("error", Views.error(result)).render();
         }
         var assistant = Assistant.of(response.answers(), candidates);
-        var outcome = assistant.outcome(now);
+        var actions = assistant.outcomes(now).stream()
+            .map(o -> new Action(o.getClass().getSimpleName(), headline(o), o instanceof Outcome.Execute(var c) ? c : null))
+            .toList();
         return page.data("assistant", assistant)
             .data("usage", response.usage())
-            .data("kind", outcome.getClass().getSimpleName())
-            .data("headline", headline(outcome))
-            .data("command", outcome instanceof Outcome.Execute(var command) ? command : null)
+            .data("actions", actions)
             .data("slots", slots(assistant))
             .render();
     }
 
     private static List<SlotRow> slots(Assistant assistant) {
+        var acting = assistant.acting();
         return Assistant.SLOTS.stream()
             .map(slot -> new SlotRow(slot.label(),
                 slot.candidates().apply(assistant.candidates()).stream().map(Candidates.Candidate::text).toList(),
                 assistant.chosen().containsKey(slot) ? assistant.chosen().get(slot).text() : null,
-                slot.intent() == assistant.intent()))
+                acting.contains(slot.intent())))
             .toList();
     }
 
@@ -78,7 +82,7 @@ public final class AssistantPage {
     }
 
     /** Qute's strict rendering fails on names never set, so the optional ones start as null. */
-    private TemplateInstance page(String message, SessionStats stats) {
-        return template.data("message", message).data("stats", stats).data("error", null).data("assistant", null);
+    private TemplateInstance page(String message, Assistant.Mode mode, SessionStats stats) {
+        return template.data("message", message).data("multi", mode == Assistant.Mode.MULTI).data("stats", stats).data("error", null).data("assistant", null);
     }
 }

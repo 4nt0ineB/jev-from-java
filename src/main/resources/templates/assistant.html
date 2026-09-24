@@ -12,6 +12,8 @@
   td, th { padding: 6px 8px; border-bottom: 1px solid var(--line); }
   tr.unused td { color: var(--muted); }
   tr.used td:first-child { font-weight: 700; }
+  .modes { display: flex; gap: 16px; margin-bottom: 12px; }
+  .modes label { display: flex; gap: 6px; align-items: center; font-weight: 400; margin: 0; }
   .none { color: var(--muted); font-style: italic; }
 {/style}
 <header>
@@ -38,6 +40,12 @@
         <button type="button" data-text="Iron my shirts">EN · unsupported</button>
         <button type="button" data-text="set an infinite lightyear alarm">EN · no valid time</button>
         <button type="button" data-text="bweruserisurapo">nonsense</button>
+        <button type="button" data-mode="multi" data-text="Réveille-moi à 7h et dis-moi s'il pleut demain">FR · multi: alarm + weather</button>
+        <button type="button" data-mode="multi" data-text="Turn the bedroom lights red and add a meeting on Monday at 9 am">EN · multi: light + calendar</button>
+      </div>
+      <div class="modes">
+        <label><input type="radio" name="mode" value="single"{#if !multi} checked{/if}> Single action</label>
+        <label><input type="radio" name="mode" value="multi"{#if multi} checked{/if}> Multi action</label>
       </div>
       <button class="submit" type="submit">Ask</button>
     </form>
@@ -47,10 +55,12 @@
     {#if error}
       <div class="card error">{error}</div>
     {#else if assistant}
-      <div class="card outcome {kind}">
-        <div class="big">{headline}</div>
-        {#if command}<code>{command}</code>{/if}
+      {#for action in actions}
+      <div class="card outcome {action.kind}">
+        <div class="big">{action.headline}</div>
+        {#if action.command}<code>{action.command}</code>{/if}
       </div>
+      {/for}
 
       <div class="card">
         <h2>Intent · choice over 61 options (top 5)</h2>
@@ -74,6 +84,20 @@
         <div class="meta">A clear no means "didn't understand", before any intent is considered.</div>
       </div>
 
+      {#if multi}
+      <div class="card">
+        <h2>Asked for? · one noul per handler (yellow band = unsure)</h2>
+        {#for ask in assistant.asks.entrySet}
+          <div class="row signal">
+            <span class="name">{ask.key.label}</span>
+            <span class="bar"><span class="band"></span><span class="dot" style="left: {ask.value.percent}%"></span></span>
+            <span class="pct">{ask.value.percent}%</span>
+          </div>
+        {/for}
+        <div class="meta">Every clear yes runs its handler; an unsure one is flagged instead of guessed.</div>
+      </div>
+      {/if}
+
       <div class="card">
         <h2>Slots · found by code, picked by Jev</h2>
         <table>
@@ -86,7 +110,7 @@
             </tr>
           {/for}
         </table>
-        <div class="meta">Every slot is asked in the same call, whatever the intent. Bold rows belong to the chosen intent; the others are answered and ignored.</div>
+        <div class="meta">Every slot is asked in the same call, whatever the intent. Bold rows belong to the intents acted on; the others are answered and ignored.</div>
       </div>
       <div class="meta">{usage.inputTokens} input tokens · <b>{cost.usd}</b> · about {cost.perDollar} requests per dollar · <b>{took.ms}</b></div>
     {#else}

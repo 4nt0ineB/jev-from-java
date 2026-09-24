@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SequencedMap;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import triage.Verdict;
@@ -26,6 +27,8 @@ import typed.decision.model.Question;
 /**
  * The answers to {@link #questions}, read back into assistant terms. Every slot question is asked in the same call
  * as the intent, whatever the intent turns out to be; {@link #outcome} only reads the slots of the chosen one.
+ * {@code asks} is empty in {@link Mode#SINGLE}; in {@link Mode#MULTI} it holds, per handled intent, the probability
+ * that the message asks for it, so one message can trigger several commands.
  */
 public record Assistant(
     Candidates candidates,
@@ -33,15 +36,24 @@ public record Assistant(
     Intent intent,
     Map<Intent, Probability> intents,
     Probability confidence,
-    Map<Slot<?>, Candidate<?>> chosen) {
+    Map<Slot<?>, Candidate<?>> chosen,
+    Map<Intent, Probability> asks) {
+
+    public enum Mode { SINGLE, MULTI }
+
+    /** The intents with a handler, and the noul that asks for each one in {@link Mode#MULTI}. */
+    static final Map<Intent, String> HANDLED = new EnumMap<>(Map.of(
+        Intent.ALARM_SET, "Does this message ask to set an alarm?",
+        Intent.WEATHER_QUERY, "Does this message ask about the weather?",
+        Intent.IOT_HUE_LIGHTCHANGE, "Does this message ask to change the colour of the lights?",
+        Intent.CALENDAR_SET, "Does this message ask to add an event or a reminder to the calendar?"));
 
     /** Threshold from TypeSafe's docs: 0.6 is enough for a low-stakes action, and a wrong alarm is low-stakes. */
     static final double ACT_CONFIDENCE = 0.6;
 
     static final String NONE = "none";
 
-    /** One value a handler needs, picked by Jev among the {@link Candidates} of one kind. */
-    /** {@code intent}: the handler that reads this slot. */
+    /** One value the {@code intent}'s handler needs, picked by Jev among the {@link Candidates} of one kind. */
     public record Slot<T>(String id, Intent intent, String label, String instructions,
                           Function<Candidates, List<Candidate<T>>> candidates) {}
 
@@ -72,16 +84,20 @@ public record Assistant(
     public Assistant {
         intents = Collections.unmodifiableMap(new EnumMap<>(intents));
         chosen = Map.copyOf(chosen);
+        asks = Collections.unmodifiableMap(new EnumMap<>(asks));
     }
 
     /** A slot with no candidate is not asked: its only possible answer would be {@code none}. */
-    public static Map<String, Question> questions(Candidates candidates) {
+    public static Map<String, Question> questions(Candidates candidates, Mode mode) {
         var questions = new HashMap<String, Question>();
         questions.put("intelligible", new Question.Noul(
             "Is this an understandable request or question that someone could address to a voice assistant?"));
         questions.put("intent", new Question.Choice(
             "What does the user want the voice assistant to do?",
             Arrays.stream(Intent.values()).collect(Collectors.toMap(Intent::label, i -> i.description))));
+        if (mode == Mode.MULTI) {
+            HANDLED.forEach((intent, instructions) -> questions.put(asksId(intent), new Question.Noul(instructions)));
+        }
         for (var slot : SLOTS) {
             var options = slot.candidates().apply(candidates);
             if (options.isEmpty()) continue;
@@ -105,8 +121,11 @@ public record Assistant(
             var pick = Answer.get(answers, slot.id(), Answer.Choice.class).choice();
             options.stream().filter(c -> c.text().equals(pick)).findFirst().ifPresent(c -> chosen.put(slot, c));
         }
+        var asks = new EnumMap<Intent, Probability>(Intent.class);
+        HANDLED.keySet().stream().filter(i -> answers.containsKey(asksId(i)))
+            .forEach(i -> asks.put(i, Answer.get(answers, asksId(i), Answer.Noul.class).noul()));
         return new Assistant(candidates, Answer.get(answers, "intelligible", Answer.Noul.class).noul(),
-            Intent.fromLabel(intent.choice()), intents, intent.confidence(), chosen);
+            Intent.fromLabel(intent.choice()), intents, intent.confidence(), chosen, asks);
     }
 
     /** The only unchecked cast: {@link #of} stores each slot's pick from that slot's own candidates. */
@@ -127,8 +146,31 @@ public record Assistant(
     public Outcome outcome(LocalDateTime now) {
         if (Verdict.of(intelligible) == Verdict.NO) return new Outcome.NotUnderstood();
         if (confidence.value() < ACT_CONFIDENCE) return new Outcome.Unsure(intent, confidence);
+        return intent == Intent.UNSUPPORTED ? new Outcome.Unsupported() : handle(intent, now);
+    }
+
+    /**
+     * Several commands when {@code asks} says so: every handled intent with a clear yes runs, an unsure one becomes
+     * {@link Outcome.Unsure}. With no yes and no unsure, or in {@link Mode#SINGLE}, this is {@link #outcome}.
+     */
+    public List<Outcome> outcomes(LocalDateTime now) {
+        if (Verdict.of(intelligible) == Verdict.NO) return List.of(new Outcome.NotUnderstood());
+        var requested = asks.entrySet().stream()
+            .filter(e -> Verdict.of(e.getValue()) != Verdict.NO)
+            .map(e -> Verdict.of(e.getValue()) == Verdict.YES ? handle(e.getKey(), now) : new Outcome.Unsure(e.getKey(), e.getValue()))
+            .toList();
+        return requested.isEmpty() ? List.of(outcome(now)) : requested;
+    }
+
+    /** The intents whose slots {@link #outcomes} reads: the clear yeses in multi mode, else the chosen intent. */
+    public Set<Intent> acting() {
+        var yes = asks.entrySet().stream().filter(e -> Verdict.of(e.getValue()) == Verdict.YES)
+            .map(Map.Entry::getKey).collect(Collectors.toSet());
+        return yes.isEmpty() ? Set.of(intent) : yes;
+    }
+
+    private Outcome handle(Intent intent, LocalDateTime now) {
         return switch (intent) {
-            case UNSUPPORTED -> new Outcome.Unsupported();
             case ALARM_SET -> value(ALARM_TIME)
                 .<Outcome>map(time -> new Outcome.Execute(new Command.SetAlarm(
                     value(ALARM_DATE).orElse(time.isAfter(now.toLocalTime()) ? now.toLocalDate() : now.toLocalDate().plusDays(1)),
@@ -144,5 +186,9 @@ public record Assistant(
                 .orElse(new Outcome.Missing(intent, "On which day is the event?"));
             default -> new Outcome.Unhandled(intent);
         };
+    }
+
+    static String asksId(Intent intent) {
+        return "asks_" + intent.label();
     }
 }

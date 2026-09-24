@@ -9,6 +9,7 @@ import api.typesafe.jev.ModelId;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -33,9 +34,28 @@ class AssistantLiveTest {
         var now = LocalDateTime.now();
         var candidates = Candidates.of(message, now.toLocalDate());
 
-        var response = ((JevClient.Result.Success) jev.ask(message, Assistant.questions(candidates))).response();
+        var response = ((JevClient.Result.Success) jev.ask(message, Assistant.questions(candidates, Assistant.Mode.SINGLE))).response();
         var outcome = Assistant.of(response.answers(), candidates).outcome(now);
 
         assertEquals(expected, outcome.getClass().getSimpleName(), outcome::toString);
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "Réveille-moi à 7h et dis-moi s'il pleut demain                    | SetAlarm QueryWeather",
+        "Mets la lumière de la chambre en rouge et ajoute un rdv lundi à 9h | AddEvent ChangeLight",
+        "Wake me up at 6 am                                                 | SetAlarm",
+    })
+    void multiAction(String message, String expected) throws InterruptedException {
+        var now = LocalDateTime.now();
+        var candidates = Candidates.of(message, now.toLocalDate());
+
+        var response = ((JevClient.Result.Success) jev.ask(message, Assistant.questions(candidates, Assistant.Mode.MULTI))).response();
+        var outcomes = Assistant.of(response.answers(), candidates).outcomes(now);
+
+        var commands = outcomes.stream()
+            .map(o -> o instanceof Outcome.Execute(var command) ? command.getClass().getSimpleName() : o.toString())
+            .collect(Collectors.joining(" "));
+        assertEquals(expected, commands);
     }
 }
