@@ -3,6 +3,7 @@ import api.typesafe.jev.JevClient;
 import api.typesafe.jev.JevJson;
 import api.typesafe.jev.ModelId;
 import api.typesafe.jev.Price;
+import api.typesafe.jev.Retry;
 import assistant.Assistant;
 import assistant.Candidates;
 import io.javalin.http.Context;
@@ -25,7 +26,7 @@ void main() throws IOException {
         URI.create(properties.getProperty("typesafe.api.url")),
         new ModelId(properties.getProperty("typesafe.model")),
         new ApiKey(System.getenv("TYPESAFE_API_KEY")),
-        JevJson.mapper());
+        JevJson.mapper(), Retry.DEFAULT);
     var price = new Price(new BigDecimal(properties.getProperty("typesafe.price.usd.per.million.input.tokens")));
     var triagePage = new TriagePage();
     var assistantPage = new AssistantPage();

@@ -5,7 +5,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import typed.decision.model.Question;
@@ -30,28 +32,39 @@ public final class JevClient {
     private final ModelId model;
     private final ApiKey apiKey;
     private final ObjectMapper mapper;
+    private final Retry retry;
 
-    public JevClient(HttpClient http, URI baseUri, ModelId model, ApiKey apiKey, ObjectMapper mapper) {
+    public JevClient(HttpClient http, URI baseUri, ModelId model, ApiKey apiKey, ObjectMapper mapper, Retry retry) {
         this.http = http;
         this.endpoint = baseUri.resolve("/v1/systemone");
         this.model = model;
         this.apiKey = apiKey;
         this.mapper = mapper;
+        this.retry = retry;
     }
 
-    // no automatic retry on Retryable, add backoff here if the page gets real traffic
+    /** Retries 429 and 529 per {@link Retry}; returns {@link Result.Retryable} once the attempts are used up. */
     public Result ask(String state, Map<String, Question> questions) throws InterruptedException {
         var request = HttpRequest.newBuilder(endpoint)
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + apiKey.value())
             .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(new JevRequest(state, model, questions))))
             .build();
-        HttpResponse<String> response;
-        try {
-            response = http.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            return new Result.Transport(e);
+        for (var attempt = 1; ; attempt++) {
+            HttpResponse<String> response;
+            try {
+                response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (IOException e) {
+                return new Result.Transport(e);
+            }
+            var result = result(response);
+            if (!(result instanceof Result.Retryable) || attempt == retry.attempts()) return result;
+            var backoff = retry.delay(attempt);
+            Thread.sleep(retryAfter(response).orElse(backoff));
         }
+    }
+
+    private Result result(HttpResponse<String> response) {
         return switch (response.statusCode()) {
             case 200 -> parse(response.body());
             case 401 -> new Result.Unauthorized();
@@ -59,6 +72,14 @@ public final class JevClient {
             case 429, 529 -> new Result.Retryable(response.statusCode());
             default -> new Result.Unexpected(response.statusCode(), response.body());
         };
+    }
+
+    /** The server's own hint, in seconds, capped like our backoff so one reply cannot stall a caller for minutes. */
+    private Optional<Duration> retryAfter(HttpResponse<String> response) {
+        return response.headers().firstValue("Retry-After")
+            .filter(v -> v.strip().matches("\\d{1,6}"))
+            .map(v -> Duration.ofSeconds(Long.parseLong(v.strip())))
+            .map(d -> d.compareTo(retry.cap()) > 0 ? retry.cap() : d);
     }
 
     private Result parse(String body) {

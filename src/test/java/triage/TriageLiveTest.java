@@ -6,6 +6,7 @@ import api.typesafe.jev.ApiKey;
 import api.typesafe.jev.JevClient;
 import api.typesafe.jev.JevJson;
 import api.typesafe.jev.ModelId;
+import api.typesafe.jev.Retry;
 import java.net.URI;
 import java.net.http.HttpClient;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -16,7 +17,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @EnabledIfEnvironmentVariable(named = "JEV_LIVE_TESTS", matches = "true")
 class TriageLiveTest {
     private final JevClient jev = new JevClient(HttpClient.newHttpClient(), URI.create("https://api.typesafe.ai"),
-        new ModelId("jev-1.13.0"), new ApiKey(System.getenv("TYPESAFE_API_KEY")), JevJson.mapper());
+        new ModelId("jev-1.13.0"), new ApiKey(System.getenv("TYPESAFE_API_KEY")), JevJson.mapper(), Retry.DEFAULT);
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
