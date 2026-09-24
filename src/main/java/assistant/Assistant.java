@@ -46,7 +46,8 @@ public record Assistant(
         Intent.ALARM_SET, "Does this message ask to set an alarm?",
         Intent.WEATHER_QUERY, "Does this message ask about the weather?",
         Intent.IOT_HUE_LIGHTCHANGE, "Does this message ask to change the colour of the lights?",
-        Intent.CALENDAR_SET, "Does this message ask to add an event or a reminder to the calendar?"));
+        Intent.CALENDAR_SET, "Does this message ask to add an event, an appointment or a reminder to the calendar?"
+            + " Setting an alarm or a wake-up call is not a calendar event."));
 
     /** Threshold from TypeSafe's docs: 0.6 is enough for a low-stakes action, and a wrong alarm is low-stakes. */
     static final double ACT_CONFIDENCE = 0.6;
