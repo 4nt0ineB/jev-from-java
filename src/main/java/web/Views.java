@@ -22,7 +22,7 @@ import triage.Verdict;
 import typed.decision.model.Probability;
 
 /** One Qute engine for every page, so templates can include {@code layout} and share the formatting helpers. */
-final class Views {
+public final class Views {
     private static final Engine ENGINE = Engine.builder()
         .addDefaults()
         .addValueResolver(new ReflectionValueResolver())
@@ -48,7 +48,7 @@ final class Views {
     private Views() {
     }
 
-    static Template template(String id) {
+    public static Template template(String id) {
         return ENGINE.getTemplate(id);
     }
 

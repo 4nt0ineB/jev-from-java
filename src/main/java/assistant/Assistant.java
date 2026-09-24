@@ -50,7 +50,7 @@ public record Assistant(
             + " Setting an alarm or a wake-up call is not a calendar event."));
 
     /** Threshold from TypeSafe's docs: 0.6 is enough for a low-stakes action, and a wrong alarm is low-stakes. */
-    static final double ACT_CONFIDENCE = 0.6;
+    public static final double ACT_CONFIDENCE = 0.6;
 
     static final String NONE = "none";
 

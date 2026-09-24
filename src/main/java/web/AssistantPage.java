@@ -57,7 +57,7 @@ public final class AssistantPage {
             .toList();
     }
 
-    private static String headline(Outcome outcome) {
+    static String headline(Outcome outcome) {
         return switch (outcome) {
             case Outcome.NotUnderstood() -> "Sorry, I didn't understand that.";
             case Outcome.Unsure(var best, var confidence) -> "Not sure what you mean. Maybe %s? (%d%%)"

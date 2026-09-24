@@ -1,0 +1,117 @@
+{#include layout active="batch"}
+{#title}Batch{/title}
+{#style}
+  main { grid-template-columns: minmax(280px, 340px) 1fr; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 12px; padding: 36px 16px; text-align: center;
+    color: var(--muted); cursor: pointer; font-weight: 400; margin: 0; }
+  .drop.over { border-color: var(--accent); background: #eef2ff; color: var(--ink); }
+  .drop b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+  .drop input { display: none; }
+  .or { text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0; }
+  .submit { width: 100%; }
+  .submit:disabled { opacity: .5; cursor: default; }
+  .slider { margin-top: 4px; }
+  .slider input { width: 100%; accent-color: var(--accent); }
+  .slider output { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .right { display: grid; grid-template-rows: auto 1fr; gap: 16px; }
+  .current .text { font-size: 20px; font-weight: 600; min-height: 30px; }
+  .current .answer { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+  .intent { font-weight: 700; color: var(--accent); }
+  .mark { font-weight: 700; font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+  .mark.ok { background: #d1fae5; color: #065f46; }
+  .mark.ko { background: #fee2e2; color: #991b1b; }
+  .mark.review { background: var(--unsure); color: #92400e; }
+  .current code { display: block; margin-top: 8px; font-size: 13px; color: var(--muted); min-height: 18px; }
+  .ticker { margin: 12px 0 0; padding: 0; list-style: none; font-size: 13px; }
+  .ticker li { display: grid; grid-template-columns: 22px 1fr 180px 44px; gap: 8px; padding: 3px 0;
+    border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ticker li span { overflow: hidden; text-overflow: ellipsis; }
+  .ticker .pct { font-size: 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .tile { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .tile b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--muted); font-size: 12px; }
+  .charts { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 1100px) { .charts, .tiles { grid-template-columns: 1fr 1fr; } }
+  .chart { position: relative; }
+  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart .grid line { stroke: var(--line); }
+  .chart .axis text { fill: var(--muted); font-size: 11px; }
+  .chart .curve { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .chart .here { fill: var(--accent); stroke: #fff; stroke-width: 2; }
+  .chart .bin { fill: #c7d2fe; }
+  .chart .bin.kept { fill: var(--accent); }
+  .chart .cut { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 12px;
+    padding: 4px 8px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -120%); display: none; }
+  .list { margin: 0; padding: 0; list-style: none; font-size: 13px; }
+  .list li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); }
+  .list li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list .n { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  [hidden] { display: none !important; }
+{/style}
+<header>
+  <div>
+  <h1>Batch: zero-shot intent classification</h1>
+  </div>
+  <div class="spend">
+    <b id="spend">$0</b> · <b id="p50">–</b> p50
+    <span id="progress">no run yet</span>
+  </div>
+</header>
+<main data-act="{act}" data-unsure-from="{unsureFrom}">
+  <section>
+    <div class="card">
+      <label class="drop" id="drop">
+        <b>Drop a CSV here</b>
+        or click to choose one · columns <code>text</code>[, <code>gold_intent</code>] · up to {maxRows} rows
+        <input type="file" id="file" accept=".csv,text/csv">
+      </label>
+      <div class="or">or</div>
+      <button class="submit" id="sample" type="button">Run the MASSIVE fr-FR sample (200 rows)</button>
+      <div class="hint">MASSIVE 1.1 test split, CC BY 4.0 (Amazon).</div>
+    </div>
+    <div class="card">
+      <h2>Act automatically from</h2>
+      <div class="slider">
+        <input type="range" id="threshold" min="0" max="1" step="0.01" value="{act}">
+        <div class="meta">Intent confidence ≥ <output id="thresholdOut">{act}</output>, and the message is understood. Below: a person reviews it. Moving this re-reads the stored answers; nothing is sent to Jev again.</div>
+      </div>
+    </div>
+    <div class="card error" id="error" hidden></div>
+  </section>
+
+  <section class="right">
+    <div class="card current">
+      <h2>Current row</h2>
+      <div class="text" id="curText">Drop a file or run the sample.</div>
+      <div class="answer">
+        <span class="intent" id="curIntent"></span>
+        <span class="pct" id="curConf"></span>
+        <span id="curMark"></span>
+        <span class="meta" id="curGold"></span>
+      </div>
+      <div class="meta" id="curHeadline"></div>
+      <code id="curCommand"></code>
+      <ul class="ticker" id="ticker"></ul>
+    </div>
+
+    <div class="card">
+      <h2 id="statsTitle">Stats</h2>
+      <div class="tiles" id="tiles"></div>
+      <div class="charts">
+        <div>
+          <h2 id="chartTitle"></h2>
+          <div class="chart" id="chart"><div class="tip" id="tip"></div></div>
+        </div>
+        <div>
+          <h2 id="listTitle"></h2>
+          <ul class="list" id="list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/static/batch.js"></script>
+{/include}

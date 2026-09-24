@@ -6,7 +6,7 @@ import typed.decision.model.Probability;
 public enum Verdict {
     NO, UNSURE, YES;
 
-    static final double UNSURE_FROM = 0.35;
+    public static final double UNSURE_FROM = 0.35;
     static final double UNSURE_TO = 0.65;
 
     public static Verdict of(Probability yes) {

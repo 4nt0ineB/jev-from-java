@@ -9,6 +9,13 @@ import assistant.Candidates;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
 import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import tools.jackson.databind.json.JsonMapper;
+import triage.Verdict;
+import web.Batch;
+import web.Views;
 import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -31,9 +38,19 @@ void main() throws IOException {
     var triagePage = new TriagePage();
     var assistantPage = new AssistantPage();
     var clock = Clock.systemDefaultZone();
+    var batch = new Batch(jev, price, clock, BATCH_PARALLELISM);
+    var sample = resource("samples/massive-fr-FR-test-200.csv");
+    var batchPage = Views.template("batch").data("maxRows", Batch.MAX_ROWS)
+        .data("act", Assistant.ACT_CONFIDENCE).data("unsureFrom", Verdict.UNSURE_FROM).render();
+    var rowJson = JsonMapper.builder().build();
 
     Javalin.create(config -> {
         config.concurrency.useVirtualThreads = true;
+        config.staticFiles.add(files -> {
+            files.hostedPath = "/static";
+            files.directory = "/static";
+            files.location = Location.CLASSPATH;
+        });
         config.routes.get("/", ctx -> ctx.html(triagePage.empty(stats(ctx))));
         config.routes.post("/", ctx -> {
             var message = message(ctx);
@@ -56,6 +73,33 @@ void main() throws IOException {
             var mode = "multi".equals(ctx.formParam("mode")) ? Assistant.Mode.MULTI : Assistant.Mode.SINGLE;
             var call = ask(ctx, jev, price, message, Assistant.questions(candidates, mode));
             ctx.html(assistantPage.render(message, mode, candidates, call.result(), call.cost(), call.took(), call.stats(), now));
+        });
+        config.routes.get("/batch", ctx -> ctx.html(batchPage));
+        config.routes.post("/batch", ctx -> {
+            List<Batch.Line> lines;
+            try {
+                lines = Batch.lines("massive-fr".equals(ctx.queryParam("sample")) ? sample : ctx.body());
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).result(e.getMessage());
+                return;
+            }
+            if (lines.isEmpty()) {
+                ctx.status(400).result("No rows with text in this CSV.");
+                return;
+            }
+            ctx.disableCompression();
+            var response = ctx.res();
+            response.setContentType("application/x-ndjson");
+            response.setHeader("X-Rows", String.valueOf(lines.size()));
+            var out = response.getOutputStream();
+            batch.run(lines, row -> {
+                try {
+                    out.write((rowJson.writeValueAsString(row) + "\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
         });
     }).start(Integer.getInteger("port", 7070));
 }
@@ -85,6 +129,15 @@ private String message(Context ctx) {
 /** Per browser session, in memory: resets on restart. Only successful calls are billed, so only they count. */
 private SessionStats stats(Context ctx) {
     return Objects.requireNonNullElse(ctx.sessionAttribute("stats"), SessionStats.NONE);
+}
+
+/** Enough to keep a 200-row run well under the rate limit while still looking fast. */
+private static final int BATCH_PARALLELISM = 8;
+
+private String resource(String name) throws IOException {
+    try (var in = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(name), name + " not on classpath")) {
+        return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+    }
 }
 
 private Properties loadProperties() throws IOException {

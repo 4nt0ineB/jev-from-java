@@ -1,0 +1,201 @@
+text,gold_intent
+est-il dix,datetime_query
+oui ou non la température de demain doit être chaud,weather_query
+où je suis allé aujourd'hui,general_quirky
+rappelle -moi ça,calendar_set
+donnez-moi les événements du calendrier de aujourd'hui après six heures du soir,calendar_query
+combien de minutes dois-je attendre pour récupérer ma nourriture de china on the go,takeaway_query
+comment s'est passée ta journée aujourd'hui,general_quirky
+le temps était mauvais aujourd'hui,general_quirky
+s’il te plaît retire mon alarmes,alarm_remove
+recevoir une notification toutes les heures sur les nouvelles sports,news_query
+je veux tout savoir sur la rupture du barrage en california,news_query
+jeter ma liste de choses à faire s'il vous plaît,lists_remove
+s'il te plaît ne joue que les chansons de rehman's,play_music
+supprime l’alarme que je viens de régler,alarm_remove
+comment puis-je comprendre les femmes,general_quirky
+mets l'émission de radio le dernier docteur,play_radio
+baisser les lumières s'il te plait,iot_hue_lightdim
+supprimer ma liste de tâche,lists_remove
+supprimer mon prochain événement,calendar_remove
+quel est le numéro de téléphone de mr taxi il est dans mes contacts,email_querycontact
+ça a t'il été une journée bien remplie,general_quirky
+montre la météo,weather_query
+rechercher les clients qui assisteront à la réunion,calendar_set
+veuillez tweeter sur le service dell pour les services de retard,social_post
+angèle a-t-elle un nouveau bébé,qa_factoid
+tout ce qui te passe par la tête,general_quirky
+donnez-moi une mise à jour sur l'élection dans une heure,calendar_set
+bonjour mon article que j'ai acheté à quelqu'un est en panne,social_post
+j'aurais besoin d'être informé des services religieux les dimanches à onze heures du matin,calendar_set
+rappelle-moi après dix minutes,calendar_set
+amour,general_quirky
+annuler la prochaine réunion,calendar_remove
+rappel de réunion,calendar_set
+ai-je reçu des e-mails au cours des dix dernières minutes,email_query
+dis-moi quel temps il fera cette semaine,weather_query
+est-ce que cette chanson est d' amel bent,music_query
+iphone sept description,qa_definition
+reprendre la chanson sur le livre audio de beatles,play_audiobook
+quels sont mes projets pour le mois de mai,calendar_query
+un plus deux égale à combien,qa_maths
+je veux qu'il se souvienne de mes préférences et me recommande des choses en fonction de celles-ci lorsque je demande,general_quirky
+donne moi la liste des billets de train de marseille à nice disponibles,transport_query
+salut toi,general_quirky
+b. b. c. gros titres du monde,news_query
+à quoi ressemble ma semaine à venir,calendar_query
+uber moi à aéroport,transport_taxi
+ajouter des bananes à ma liste de course,lists_createoradd
+on est mercredi,datetime_query
+me tenir au date de l'actualité sports,news_query
+commande un combo d'ailes de moutarde au miel de douze pièces avec assaisonnement alton les frites et un sprite comme boisson,takeaway_order
+de quel film la musique provient quel est le nom de la musique,music_query
+jour prairie maison dans la radio de la voiture,play_radio
+quelle est la probabilité de précipitation dans le temps d'aujourd'hui,weather_query
+coupe le volume,audio_volume_down
+mets les haut-parleurs sur la sourdine,audio_volume_mute
+événements à venir dans le calendrier,calendar_set
+change les lumières dans une teinte différente,iot_hue_lightchange
+effacer mon calendrier,calendar_remove
+en quelle année cette chanson est-elle sortie,music_query
+y a-t-il quelque mises à jour concerne de élection,news_query
+commence les chansons de céline dion,play_music
+définir sidéré,qa_definition
+supprimer les événements de ma liste,lists_remove
+est-ce que événement de remerciement du quatorze de ce mois est vrai,calendar_query
+quel film dois- je regarder aujourd'hui,recommendation_movies
+éteindre les lumières de ma chambre,iot_hue_lightoff
+olly joue un bon morceau de mon lecteur jazz préféré,play_music
+décrire ce qu'est une sphère,qa_definition
+bulletin météo maintenant,weather_query
+hey quoi d'intéressant s'est récemment passé dans le sport,general_quirky
+ai- je une réunion le samedi vingt-cinq mars,calendar_query
+rappelle-moi demain à dix heures du matin à propos de la réunion,calendar_set
+ajouter un rappel pour le vingt avril comme anniversaire de mon frère,calendar_set
+je veux écouter le dernier podcast le point belge,play_podcasts
+pouvez-vous augmenter les lumières pour moi s'il vous plaît,iot_hue_lightup
+quel jour tombe pâques,datetime_query
+montrer la biographie de celine,qa_factoid
+combien font un plus un,qa_maths
+quoi d'autre manque dans le journal,lists_query
+s'il vous plaît créez une nouvelle liste pour moi,lists_createoradd
+éteindre les lumières de la salle de bain,iot_hue_lightoff
+régler une alarme pour six heures trente du matin,alarm_set
+rappelle-moi mon emploi du temps pour l'après-midi,calendar_set
+peux-tu mettre l' anniversaire de lee le vingt deux juin,calendar_set
+y a-t-il un embouteillage sur mon itinéraire,transport_traffic
+j'aimerai écouter un peu du rap musique,play_music
+vérifie outlook,email_query
+qu'est-ce qu'un parsec,qa_factoid
+olly est-ce que shibaru sushi livre,takeaway_query
+regarde mes mail s il te plaît,email_query
+quels films passent au cinéma aujourd'hui,recommendation_movies
+créer un rappel de notification pour la réunion de demain,calendar_set
+quelle est la dernière story de fox news,news_query
+s'il te plait vérifie les emails récents sur les études de cet expéditeur,email_query
+sélectionner la première chanson dans ma bibliothèque itunes,play_music
+donnez-moi une liste de choses à faire,calendar_query
+si un crayon coûte quatre dollars et un livre coûte dix dollars combien je devrais payer si j'achète deux crayons et trois livres,qa_maths
+apporte-moi le titre de la musique actuelle,music_query
+s'il vous plaît vérifiez si charley's steakhouse livre,takeaway_query
+android,lists_query
+quelle est la météo à paris,weather_query
+mets en pause le livre,play_audiobook
+régler la date de l' événement dans le calendrier avec d' autres,calendar_set
+dis moi tout ce que tu sais sur les paresseux,qa_factoid
+peux-tu mettre l'agent secret,play_audiobook
+baisse les lumières à moyen,iot_hue_lightoff
+santé,general_quirky
+ce qui s'est passé ces dernier deux mois,news_query
+c. n. n. titres,news_query
+que voulez-vous faire aujourd'hui,general_quirky
+s’il te plaît dis moi si les alarmes son activées,alarm_query
+réveille-moi à cinq heures du matin cette semaine,alarm_set
+taux de change de l'euro avec le dollar,qa_currency
+est-ce qu' angeline a un nouveau film cette année,qa_factoid
+vérifie les e-mails les plus récents,email_query
+écoutons le podcast touche pas à mon poste,play_podcasts
+quelle heure est-il en australie,datetime_query
+quelle est l'heure standard sur la cote est,datetime_query
+envoyer un email au nouveau contact,email_sendemail
+jouer la radio nrj pour moi,play_radio
+mets au suivant ne me quitte pas,play_music
+supprimer la liste de course,lists_remove
+quelle heure est-il à ottawa maintenant,datetime_query
+veuillez envoyer un e-mail à sally concernant la réunion de demain,email_sendemail
+affiche tous les e-mails concernant la violation,email_query
+rappel comment je me sens a propos de cette chanson,music_likeness
+préparer un e mail pour susan,email_sendemail
+combien vaut le dollar par rapport à l' euro,qa_currency
+jouer la chanson best friends de yelawolf,play_music
+olly je dois te raconter ma journée,general_quirky
+tweetez samsung et dites-leur d'arrêter de tuer des gens avec leurs produits,social_post
+définir le orateur,qa_definition
+mettons les tubes de la radio,play_radio
+supprimer cet objet,lists_remove
+y a-t-il un film diffusé dans les cinémas qui ne soit pas nu,recommendation_movies
+quelle est la taille de michael lonsdale,qa_factoid
+rappel -moi quelque chose dans un moment,calendar_set
+facebook,social_query
+démarrer la machine à café à trois,iot_coffee
+commence un jeu et joue avec moi,play_game
+j'aurai besoin de chaussettes chaudes de hiver le matin,weather_query
+s'il te plaît mets ma playlist de musique rap préférée,play_music
+réserve moi un ticket de train pour marseille s'il te plait,transport_ticket
+faire le café,iot_coffee
+calendrier événement envoyer inviter bill malinda,calendar_set
+joue nrj,play_radio
+y a-t-il des événements à venir,calendar_query
+mode silencieux activé jusqu'à ce que je rentre du travail,audio_volume_mute
+je veux voir les nouvelles,news_query
+et toi,general_quirky
+je veux du café tous les jours,iot_coffee
+régler les lumières à un niveau inférieur s'il vous plaît,iot_hue_lightdim
+réunion avec pawel pour demain dix heure du matin,calendar_set
+supprimer l'évènement mon diner de lundi,calendar_remove
+quel jour de la semaine tombe noël cette année,datetime_query
+y a-t-il de la neige dans les prévisions,weather_query
+lis-moi ma liste de course,lists_query
+retirer l'alarme pour demain,alarm_remove
+quelle est la meilleure recette de cookies aux pépites de chocolat,general_quirky
+commande un repas à emporter,takeaway_order
+quelle taille fait un cachalot,qa_factoid
+quel jour est le treize décembre,datetime_query
+tweete à air france je suis en colère vous avez perdu mes sacs,social_post
+planifie une réunion de vente pour le mercredi à onze heures du matin,calendar_set
+quelle est la température à paris,qa_factoid
+publier cette vidéo sur facebook,social_post
+nouveau message à newmail at gmail point com,email_sendemail
+éteints la lumière du plafonnier,iot_hue_lightoff
+récupérer la lumière pour moi,iot_hue_lightup
+quel est le temps de trajet jusqu'au théâtre,transport_query
+passe à la section suivante,play_podcasts
+éteindre les lumières,iot_hue_lightoff
+peux-tu me raconter une blague,general_joke
+pendant combien d'années abraham lincoln a-t-il été président des états-unis,qa_factoid
+lance la playlist que j' ai consacrée à la musique rock,play_music
+ai- je un rendez-vous vendredi,calendar_query
+j aimerai que mon robot nourrisse and caresse mon chien quand je ne suis pas à la maison,general_quirky
+puis-je obtenir une recette de thon,cooking_recipe
+vérifie le courrier pour tout ce qui vient de shelly,email_query
+mets le suivant,play_podcasts
+c'est quelle chanson à la radio,music_query
+ai-je laissé la lumière allumée dans le garage,iot_hue_lightoff
+programme un rappel dans une heure pour mon pain à cuire,calendar_set
+dis-moi comment faire un sandwich pauvre garçon,cooking_recipe
+ouvrir spotify et exercice,play_radio
+conseils de santé généraux,general_quirky
+ajouter du dentifrice à ma liste de course,lists_createoradd
+ai-je des alarmes réglées pour six heures du matin demain,alarm_query
+rappelle moi s'il te plait,calendar_set
+mélange les chansons par coldplay,play_music
+olly quels sont les nouveaux films dramatiques qui sortent ce week end,recommendation_movies
+s'il vous plaît google emplacement et informations du mont rushmore,qa_factoid
+quel film puis je regarder ce soir au cinema ici à paris,recommendation_events
+quel est mon programme de la journée,calendar_query
+combien de temps dois-je cuire un steak pour obtenir une cuisson mi-saignante,cooking_recipe
+tweeter ma position actuelle,social_post
+retirer les céréales de ma liste de course,lists_remove
+lire ma liste d' épicerie,lists_query
+j'ai mis une alarme pour avoir des comprimés à midi,alarm_query
+vérifie le prix du plat et tout,takeaway_query

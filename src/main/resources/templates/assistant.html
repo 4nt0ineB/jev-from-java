@@ -19,7 +19,6 @@
 <header>
   <div>
   <h1>Voice assistant</h1>
-  <p>One Jev call: is it a request, which of 60 intents, and which value fills each handler's slots. Code finds the values, Jev only picks.</p>
   </div>
   <div class="spend">
     <b>{stats.usd.usd}</b> · <b>{stats.meanLatency.ms}</b> mean
@@ -75,7 +74,7 @@
       </div>
 
       <div class="card">
-        <h2>Is it a request? · noul (yellow band = unsure)</h2>
+        <h2>Is it a request?</h2>
         <div class="row signal">
           <span class="name">Intelligible</span>
           <span class="bar"><span class="band"></span><span class="dot" style="left: {assistant.intelligible.percent}%"></span></span>
@@ -86,7 +85,7 @@
 
       {#if multi}
       <div class="card">
-        <h2>Asked for? · one noul per handler (yellow band = unsure)</h2>
+        <h2>Asked for?</h2>
         {#for ask in assistant.asks.entrySet}
           <div class="row signal">
             <span class="name">{ask.key.label}</span>
@@ -99,7 +98,7 @@
       {/if}
 
       <div class="card">
-        <h2>Slots · found by code, picked by Jev</h2>
+        <h2>Slots</h2>
         <table>
           <tr><th>Slot</th><th>Candidates</th><th>Jev's pick</th></tr>
           {#for slot in slots}
@@ -110,7 +109,6 @@
             </tr>
           {/for}
         </table>
-        <div class="meta">Every slot is asked in the same call, whatever the intent. Bold rows belong to the intents acted on; the others are answered and ignored.</div>
       </div>
       <div class="meta">{usage.inputTokens} input tokens · <b>{cost.usd}</b> · about {cost.perDollar} requests per dollar · <b>{took.ms}</b></div>
     {#else}
