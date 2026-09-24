@@ -1,0 +1,93 @@
+{#include layout active="triage"}
+{#title}Support triage{/title}
+{#style}
+  .route { display: flex; align-items: center; gap: 14px; border-left: 6px solid; }
+  .route.auto { border-left-color: var(--auto); }
+  .route.human { border-left-color: var(--human); }
+  .route .big { font-size: 20px; font-weight: 700; }
+  .route.auto .big { color: var(--auto); }
+  .route.human .big { color: var(--human); }
+  .route ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+{/style}
+<header>
+  <div>
+  <h1>Support inbox triage</h1>
+  <p>One Jev call asks every question at once. French or English in, English criteria.</p>
+  </div>
+  <div class="spend">
+    <b>{stats.usd.usd}</b> · <b>{stats.meanLatency.ms}</b> mean
+    <span>this session · {stats.triages} triage{#if stats.triages != 1}s{/if}</span>
+  </div>
+</header>
+<main>
+  <section>
+    <form method="post" action="/" class="card">
+      <label for="message">Customer message</label>
+      <textarea id="message" name="message" required placeholder="Collez un message client, ou paste one in English…">{message}</textarea>
+      <div class="examples">
+        <button type="button" data-text="Bonjour, j'ai été prélevé deux fois ce mois-ci. Merci de me rembourser le second paiement.">FR · double charge</button>
+        <button type="button" data-text="Your API has been returning 500 errors for three days now, I already opened two tickets and nobody answered. Our checkout is down.">EN · outage, ignored</button>
+        <button type="button" data-text="Pouvez-vous m'envoyer un devis pour 50 licences ? Mon numéro est le 06 12 34 56 78.">FR · quote + phone</button>
+        <button type="button" data-text="Hi, just a quick question: can I change the colour of the dashboard?">EN · small question</button>
+      </div>
+      <button class="submit" type="submit">Triage</button>
+    </form>
+  </section>
+
+  <section>
+    {#if error}
+      <div class="card error">{error}</div>
+    {#else if triage}
+      <div class="card route {#if automatic}auto{#else}human{/if}">
+        <div>
+          <div class="big">{#if automatic}Routed to {triage.department.label}{#else}Human review{/if}</div>
+          {#if automatic}
+            <div class="meta">Every signal is a clear no, department confidence {triage.departmentConfidence.percent}%.</div>
+          {#else}
+            <ul>{#for reason in reasons}<li>{reason}</li>{/for}</ul>
+          {/if}
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Department · choice</h2>
+        {#for entry in triage.departments.entrySet}
+          <div class="row {#if entry.key == triage.department}top{/if}">
+            <span class="name">{entry.key.label}</span>
+            <span class="bar"><i style="width: {entry.value.percent}%"></i></span>
+            <span class="pct">{entry.value.percent}%</span>
+          </div>
+        {/for}
+        <div class="meta">Confidence {triage.departmentConfidence.percent}% · auto-routing needs 85%</div>
+      </div>
+
+      <div class="card">
+        <h2>Urgency · score (display only)</h2>
+        {#for entry in triage.urgency.entrySet}
+          <div class="row {#if entry.key == triage.likelyUrgency}top{/if}">
+            <span class="name">{entry.key.label}</span>
+            <span class="bar"><i style="width: {entry.value.percent}%"></i></span>
+            <span class="pct">{entry.value.percent}%</span>
+          </div>
+        {/for}
+        <div class="meta">Most probable level shown in bold; the expected value is not rounded into a level.</div>
+      </div>
+
+      <div class="card">
+        <h2>Signals · noul (yellow band = unsure)</h2>
+        {#for signal in triage.signals.entrySet}
+          <div class="row signal">
+            <span class="name">{signal.key}</span>
+            <span class="bar"><span class="band"></span><span class="dot" style="left: {signal.value.percent}%"></span></span>
+            <span class="chip {signal.value.verdict}">{signal.value.verdict} {signal.value.percent}%</span>
+          </div>
+        {/for}
+      </div>
+      <div class="meta">{usage.inputTokens} input tokens · {usage.outputTokens} output tokens (free)
+        · <b>{cost.usd}</b> · about {cost.perDollar} triages per dollar · <b>{took.ms}</b></div>
+    {#else}
+      <div class="card placeholder">Paste a message and press <b>Triage</b>.</div>
+    {/if}
+  </section>
+</main>
+{/include}

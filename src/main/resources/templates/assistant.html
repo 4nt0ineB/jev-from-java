@@ -1,0 +1,97 @@
+{#include layout active="assistant"}
+{#title}Voice assistant{/title}
+{#style}
+  textarea { min-height: 120px; }
+  .outcome { border-left: 6px solid var(--human); }
+  .outcome.Execute { border-left-color: var(--auto); }
+  .outcome.NotUnderstood, .outcome.Unsupported { border-left-color: var(--muted); }
+  .outcome .big { font-size: 20px; font-weight: 700; }
+  .outcome code { display: block; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; }
+  td, th { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  tr.unused td { color: var(--muted); }
+  tr.used td:first-child { font-weight: 700; }
+  .none { color: var(--muted); font-style: italic; }
+{/style}
+<header>
+  <div>
+  <h1>Voice assistant</h1>
+  <p>One Jev call: is it a request, which of 60 intents, and which value fills each handler's slots. Code finds the values, Jev only picks.</p>
+  </div>
+  <div class="spend">
+    <b>{stats.usd.usd}</b> · <b>{stats.meanLatency.ms}</b> mean
+    <span>this session · {stats.triages} call{#if stats.triages != 1}s{/if}</span>
+  </div>
+</header>
+<main>
+  <section>
+    <form method="post" action="/assistant" class="card">
+      <label for="message">Say something</label>
+      <textarea id="message" name="message" required placeholder="Réveille-moi demain à 7h…">{message}</textarea>
+      <div class="examples">
+        <button type="button" data-text="Réveille-moi demain à sept heures et demie">FR · alarm</button>
+        <button type="button" data-text="Quel temps fera-t-il à Lyon après-demain ?">FR · weather</button>
+        <button type="button" data-text="Mets la lumière du salon en bleu">FR · light colour</button>
+        <button type="button" data-text="Add a dentist appointment on Friday at 2 pm">EN · calendar</button>
+        <button type="button" data-text="Joue-moi un peu de jazz">FR · no handler</button>
+        <button type="button" data-text="Iron my shirts">EN · unsupported</button>
+        <button type="button" data-text="set an infinite lightyear alarm">EN · no valid time</button>
+        <button type="button" data-text="bweruserisurapo">nonsense</button>
+      </div>
+      <button class="submit" type="submit">Ask</button>
+    </form>
+  </section>
+
+  <section>
+    {#if error}
+      <div class="card error">{error}</div>
+    {#else if assistant}
+      <div class="card outcome {kind}">
+        <div class="big">{headline}</div>
+        {#if command}<code>{command}</code>{/if}
+      </div>
+
+      <div class="card">
+        <h2>Intent · choice over 61 options (top 5)</h2>
+        {#for entry in assistant.top(5).entrySet}
+          <div class="row {#if entry.key == assistant.intent}top{/if}">
+            <span class="name">{entry.key.label}</span>
+            <span class="bar"><i style="width: {entry.value.percent}%"></i></span>
+            <span class="pct">{entry.value.percent}%</span>
+          </div>
+        {/for}
+        <div class="meta">Confidence {assistant.confidence.percent}% · acting needs 60% (low-stakes)</div>
+      </div>
+
+      <div class="card">
+        <h2>Is it a request? · noul (yellow band = unsure)</h2>
+        <div class="row signal">
+          <span class="name">Intelligible</span>
+          <span class="bar"><span class="band"></span><span class="dot" style="left: {assistant.intelligible.percent}%"></span></span>
+          <span class="pct">{assistant.intelligible.percent}%</span>
+        </div>
+        <div class="meta">A clear no means "didn't understand", before any intent is considered.</div>
+      </div>
+
+      <div class="card">
+        <h2>Slots · found by code, picked by Jev</h2>
+        <table>
+          <tr><th>Slot</th><th>Candidates</th><th>Jev's pick</th></tr>
+          {#for slot in slots}
+            <tr class="{#if slot.used}used{#else}unused{/if}">
+              <td>{slot.label}</td>
+              <td>{#if slot.found.isEmpty}<span class="none">none found, not asked</span>{#else}{#each slot.found}“{it}”{#if it_hasNext}, {/if}{/each}{/if}</td>
+              <td>{#if slot.picked}“{slot.picked}”{#else if !slot.found.isEmpty}<span class="none">none</span>{/if}</td>
+            </tr>
+          {/for}
+        </table>
+        <div class="meta">Every slot is asked in the same call, whatever the intent. Bold rows belong to the chosen intent; the others are answered and ignored.</div>
+      </div>
+      <div class="meta">{usage.inputTokens} input tokens · <b>{cost.usd}</b> · about {cost.perDollar} requests per dollar · <b>{took.ms}</b></div>
+    {#else}
+      <div class="card placeholder">Type a request, or pick an example, and press <b>Ask</b>.</div>
+    {/if}
+  </section>
+</main>
+{/include}

@@ -4,3 +4,5 @@ jdk-27.jdk/
 .idea/
 target/
 setup.sh
+.DS_Store
+*.iml
