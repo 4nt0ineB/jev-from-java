@@ -10,3 +10,4 @@ cp.txt
 .venv/
 laya.log
 modal.log
+__pycache__/

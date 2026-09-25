@@ -23,7 +23,7 @@ public record Game(List<Cell> snake, Cell apple, int apples, boolean over) {
             + " snake's own body.",
         Arrays.stream(Direction.values()).collect(Collectors.toMap(Direction::label, d -> d.criterion))));
 
-    public value record Cell(int x, int y) {
+    public record Cell(int x, int y) {
         Cell to(Direction d) {
             return new Cell(x + d.dx, y + d.dy);
         }

@@ -11,7 +11,9 @@ log() { printf '[start %s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 fail() { log "ERROR: $*" >&2; exit 1; }
 
 : "${TYPESAFE_API_KEY:?export TYPESAFE_API_KEY first: the app needs it for Jev}"
-export JAVA_HOME="${JAVA_HOME:-$PWD/jdk-27.jdk/Contents/Home}"
+JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+java_version=$("$JAVA" -XshowSettings:properties -version 2>&1 | awk -F' = ' '/java.specification.version/ {print $2}')
+[ "${java_version%%.*}" -ge 25 ] 2>/dev/null || fail "JDK 25 or newer needed, found '${java_version:-none}' ($JAVA). Set JAVA_HOME."
 VENV=.venv
 LAYA_PORT=8000
 OPENJEV_APP=jev-snake-openjev
@@ -88,7 +90,7 @@ else
     log "Open-Jev: skipped (OPENJEV=0)."
 fi
 
-log "Building the Java app with $JAVA_HOME."
+log "Building the Java app with JDK $java_version ($JAVA)."
 mvn -q package -DskipTests dependency:build-classpath -Dmdep.outputFile=cp.txt
 log "Build done."
 
@@ -99,4 +101,4 @@ if [ -n "${OPENJEV_URL:-}" ]; then
 fi
 
 log "Starting the Java app on http://localhost:${PORT:-7070}/snake (Ctrl-C stops everything)."
-"$JAVA_HOME/bin/java" --enable-preview -Dport="${PORT:-7070}" -cp "target/classes:$(cat cp.txt)" Main
+"$JAVA" -Dport="${PORT:-7070}" -cp "target/classes:$(cat cp.txt)" Main

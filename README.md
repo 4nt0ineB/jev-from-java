@@ -5,13 +5,15 @@ There is no Java SDK, so the API contract is typed by hand with records and seal
 
 ![Batch tab: zero-shot intent classification on MASSIVE fr-FR](docs/batch.gif)
 
-Three tabs:
+Four tabs:
 
 - **Support triage**: a customer message in French or English gets a department, an urgency and risk signals,
   and is routed automatically or to a person depending on confidence.
 - **Voice assistant**: 60 MASSIVE intents plus `unsupported`, with typed commands (alarm, weather, lights,
   calendar), in single or multi-action mode.
 - **Batch**: drop a CSV, or run the bundled MASSIVE fr-FR sample, and watch each row get classified live.
+- **Snake**: a model picks every move of a snake game with one Choice question. Pick the model (Jev, and
+  Laya or Open-Jev when they run) and how the position is described, from spelled-out hints to a bare grid.
 
 ![Support triage tab](docs/triage.png)
 
@@ -27,6 +29,14 @@ java -cp "target/classes:$(cat cp.txt)" Main
 ```
 
 Open http://localhost:7070. Tests: `mvn test`; add `JEV_LIVE_TESTS=true` to also run the ones that call the real API.
+
+### With the self-hosted models
+
+`./start.sh` also starts [Laya](https://huggingface.co/convaiinnovations/laya) locally (`laya-serve`) and
+[Open-Jev](https://github.com/Zefan-Cai/Open-Jev) 2B on a rented [Modal](https://modal.com) GPU, waits until
+both answer, then starts the app. Both speak Jev's wire format, so the same client talks to all three.
+It needs Python 3.12 and a Modal account (`modal token new`); `LAYA=0` or `OPENJEV=0` skips one.
+Ctrl-C stops everything, including the Modal app.
 
 ## License
 
