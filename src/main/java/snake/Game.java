@@ -21,7 +21,7 @@ public record Game(List<Cell> snake, Cell apple, int apples, boolean over) {
     public static final Map<String, Question> QUESTIONS = Map.of(MOVE, new Question.Choice(
         "Which way should the snake move next to get closer to the apple? Never pick a move that hits a wall or the"
             + " snake's own body.",
-        Arrays.stream(Direction.values()).collect(Collectors.toMap(Direction::label, d -> d.criterion))));
+        Arrays.stream(Direction.values()).collect(Collectors.toMap(Direction::label, d -> "Move " + d.label() + "."))));
 
     public record Cell(int x, int y) {
         Cell to(Direction d) {
