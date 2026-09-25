@@ -1,0 +1,125 @@
+{#include layout active="snake"}
+{#title}Snake{/title}
+{#style}
+  main { grid-template-columns: auto 1fr; align-items: start; }
+  .controls { display: flex; align-items: center; gap: 10px; }
+  .controls select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+  .submit.stop { background: #b91c1c; }
+  .board { position: relative; display: grid; grid-template-columns: repeat(15, 32px); grid-auto-rows: 32px; gap: 2px;
+    padding: 2px; background: var(--line); border-radius: 8px; }
+  .board i { background: var(--card); border-radius: 4px; }
+  .board i.body { background: #818cf8; }
+  .board i.head { background: var(--accent); }
+  .board i.apple { background: #dc2626; }
+  .over { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .7);
+    font-size: 28px; font-weight: 700; color: #b91c1c; border-radius: 8px; }
+  .score { display: flex; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 13px; }
+  pre { margin: 0; white-space: pre-wrap; font-size: 13px; background: var(--bg); padding: 10px; border-radius: 8px; }
+  .options { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+  .row.move .name { text-transform: capitalize; }
+  .log { margin: 0; padding: 0; list-style: none; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .log li { display: grid; grid-template-columns: 70px 60px 1fr auto; gap: 8px; padding: 3px 0; border-top: 1px solid var(--line); }
+  .log .ko { color: #b91c1c; grid-column: 1 / -1; }
+  footer { padding: 0 32px 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 8px 10px; border-top: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  tr.current td:first-child { font-weight: 700; color: var(--accent); }
+{/style}
+<script type="application/json" id="players">{players}</script>
+<div id="snake">
+{|
+<header>
+  <div>
+    <h1>Snake: one Choice per move</h1>
+    <p>The model reads the position as text and picks a direction. Code applies the move and the rules.</p>
+  </div>
+  <div class="controls">
+    <select v-model="player" aria-label="Model">
+      <option v-for="p in players" :value="p.id">{{ p.label }}</option>
+    </select>
+    <select v-model="semantics" aria-label="State semantics">
+      <option v-for="s in semanticsOptions" :value="s">State: {{ s }}</option>
+    </select>
+    <button class="submit" :class="{ stop: running }" @click="toggle" :disabled="!game">{{ running ? 'Stop' : 'Start' }}</button>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <div class="board" v-if="game">
+      <i v-for="(cls, i) in cells" :key="i" :class="cls"></i>
+      <div class="over" v-if="game.over">Game over</div>
+    </div>
+    <div class="score" v-if="game"><span>🍎 {{ game.apples }}</span><span>length {{ game.snake.length }}</span></div>
+  </section>
+  <div>
+    <section class="card error" v-if="error">{{ error }}</section>
+    <section class="card">
+      <h2>State sent</h2>
+      <pre>{{ turn ? turn.state : 'Press Start.' }}</pre>
+|}
+      <h2 style="margin-top: 16px">Question <code>move</code> · choice</h2>
+      <div>{question.instructions}</div>
+      <ul class="options">
+        {#for c in question.criteria}<li><b>{c.key}</b>: {c.value}</li>{/for}
+      </ul>
+{|
+    </section>
+    <section class="card" v-if="turn">
+      <h2>Answer</h2>
+      <div v-if="turn.error" class="meta">{{ turn.error }}</div>
+      <template v-else>
+        <div class="row move" v-for="d in directions" :class="{ top: d === turn.move.toLowerCase() }">
+          <span class="name">{{ d }}</span>
+          <span class="bar"><i :style="{ width: pct(turn.probabilities[d]) }"></i></span>
+          <span class="pct">{{ pct(turn.probabilities[d]) }}</span>
+        </div>
+        <div class="meta">confidence {{ pct(turn.confidence) }} · {{ turn.millis }} ms · {{ usd(turn.usd) }}</div>
+      </template>
+    </section>
+    <section class="card" v-if="log.length">
+      <h2>Last moves</h2>
+      <ul class="log">
+        <li v-for="l in log" :key="l.n">
+          <span v-if="l.error" class="ko">{{ l.label }}: {{ l.error }}</span>
+          <template v-else>
+            <b>{{ l.move }}</b><span>{{ pct(l.confidence) }}</span><span>{{ l.label }}</span><span>{{ l.millis }} ms</span>
+          </template>
+        </li>
+      </ul>
+    </section>
+  </div>
+</main>
+<footer>
+  <section class="card">
+    <h2>Performance, this page</h2>
+    <table>
+      <thead>
+        <tr><th>Model</th><th>State</th><th>Moves</th><th>Apples</th><th>Deaths</th><th>Errors</th><th>Cost</th><th>Cost / move</th>
+          <th>Mean latency</th><th>Moves / s</th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="[k, s] in rows" :key="k" :class="{ current: k === key }">
+          <td>{{ s.label }}</td>
+          <td>{{ s.semantics }}</td>
+          <td>{{ s.moves }}</td>
+          <td>{{ s.apples }}</td>
+          <td>{{ s.deaths }}</td>
+          <td>{{ s.errors }}</td>
+          <td>{{ usd(s.usd) }}</td>
+          <td>{{ s.moves ? usd(s.usd / s.moves) : '–' }}</td>
+          <td>{{ s.moves + s.errors ? Math.round(s.millis / (s.moves + s.errors)) + ' ms' : '–' }}</td>
+          <td>{{ s.millis ? (s.moves * 1000 / s.millis).toFixed(1) : '–' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="meta">Moves per second counts model time only (round trip of each call), not the animation pacing.</p>
+  </section>
+</footer>
+|}
+</div>
+<script src="https://unpkg.com/vue@3.5.43/dist/vue.global.prod.js"
+  integrity="sha384-EAm39cvdifYiZjQQxCxStLasDodQMYokBrN5XPuJ7aC/JsQ4vyEUCy/+6hXpcBOW" crossorigin="anonymous"></script>
+<script src="/static/snake.js"></script>
+{/include}
