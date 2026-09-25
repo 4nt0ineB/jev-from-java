@@ -32,11 +32,17 @@ Open http://localhost:7070. Tests: `mvn test`; add `JEV_LIVE_TESTS=true` to also
 
 ### With the self-hosted models
 
-`./start.sh` also starts [Laya](https://huggingface.co/convaiinnovations/laya) locally (`laya-serve`) and
-[Open-Jev](https://github.com/Zefan-Cai/Open-Jev) 2B on a rented [Modal](https://modal.com) GPU, waits until
-both answer, then starts the app. Both speak Jev's wire format, so the same client talks to all three.
-It needs Python 3.12 and a Modal account (`modal token new`); `LAYA=0` or `OPENJEV=0` skips one.
-Ctrl-C stops everything, including the Modal app.
+`./start.sh` builds and starts the app with Jev. Two self-hosted models are opt-in, and both speak Jev's
+wire format, so the same client talks to all three:
+
+```sh
+LAYA=1 ./start.sh               # + Laya on this machine (laya-serve; first run installs torch)
+OPENJEV=1 ./start.sh            # + Open-Jev 2B on a rented Modal GPU (needs a Modal account: modal token new)
+LAYA=1 OPENJEV=1 ./start.sh     # all three
+```
+
+Both need Python 3.12. The script waits until each model answers before starting the app, and Ctrl-C
+stops everything, including the Modal app.
 
 ## License
 

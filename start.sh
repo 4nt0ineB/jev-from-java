@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Starts every model the snake page can offer, waits until each one answers, then the Java app.
-# Jev is TypeSafe's cloud API; Laya runs locally (laya-serve); Open-Jev runs on a rented Modal GPU.
-#   LAYA=0 ./start.sh        skip Laya
-#   OPENJEV=0 ./start.sh     skip Open-Jev (no GPU rented)
+# Starts the app with Jev (TypeSafe's cloud API), plus the self-hosted models you opt into. Each one
+# must answer before the app starts, so the snake page only offers models that work.
+#   ./start.sh                     Jev only: needs a JDK 25+ and TYPESAFE_API_KEY, nothing else
+#   LAYA=1 ./start.sh              + Laya on this machine (laya-serve; first run installs torch)
+#   OPENJEV=1 ./start.sh           + Open-Jev 2B on a rented Modal GPU (needs `modal token new`)
 # Ctrl-C stops everything, including the Modal app, so no GPU keeps billing after the demo.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -52,14 +53,16 @@ wait_for() {
 
 log "Jev: TypeSafe cloud API, always available with TYPESAFE_API_KEY."
 
-if [ ! -x "$VENV/bin/laya-serve" ]; then
-    log "First run: creating $VENV with laya[serve] and the modal CLI (downloads torch, a few minutes)."
-    python3.12 -m venv "$VENV"
-    "$VENV/bin/pip" install -q "laya[serve]==0.3.20" "modal==1.5.5"
-    log "$VENV ready."
-fi
+# tool package: installs the package into $VENV the first time a run needs it.
+python_tool() {
+    [ -x "$VENV/bin/$1" ] && return
+    log "First run with $1: installing $2 into $VENV (a few minutes)."
+    [ -d "$VENV" ] || python3.12 -m venv "$VENV"
+    "$VENV/bin/pip" install -q "$2"
+}
 
-if [ "${LAYA:-1}" = 1 ]; then
+if [ "${LAYA:-0}" = 1 ]; then
+    python_tool laya-serve "laya[serve]==0.3.20"
     log "Laya: starting laya-serve on 127.0.0.1:$LAYA_PORT (Apple GPU, english and multilingual checkpoints)."
     # Bound to localhost: laya-serve has no authentication unless LAYA_API_KEY is set.
     LAYA_HOST=127.0.0.1 LAYA_PORT=$LAYA_PORT LAYA_DEVICE=mps LAYA_PRELOAD=1 LAYA_MODELS=english,multilingual \
@@ -67,10 +70,11 @@ if [ "${LAYA:-1}" = 1 ]; then
     pids+=($!)
     export LAYA_URL="http://127.0.0.1:$LAYA_PORT"
 else
-    log "Laya: skipped (LAYA=0)."
+    log "Laya: off (LAYA=1 to add it)."
 fi
 
-if [ "${OPENJEV:-1}" = 1 ]; then
+if [ "${OPENJEV:-0}" = 1 ]; then
+    python_tool modal "modal==1.5.5"
     log "Open-Jev: generating this run's endpoint token and storing it as a Modal secret."
     OPENJEV_API_KEY=$(openssl rand -hex 32)
     export OPENJEV_API_KEY
@@ -87,7 +91,7 @@ if [ "${OPENJEV:-1}" = 1 ]; then
     export OPENJEV_URL
     log "Open-Jev: deployed at $OPENJEV_URL. No GPU runs until the first request."
 else
-    log "Open-Jev: skipped (OPENJEV=0)."
+    log "Open-Jev: off (OPENJEV=1 to add it)."
 fi
 
 log "Building the Java app with JDK $java_version ($JAVA)."
