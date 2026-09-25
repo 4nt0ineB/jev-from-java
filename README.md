@@ -1,7 +1,7 @@
 # Jev from Java
 
 A small web app that calls [Jev](https://docs.typesafe.ai) (TypeSafe's typed decision model) from Java.
-There is no Java SDK, so the API contract is typed by hand with records, sealed types and Valhalla value classes. (yes, pointless here, but I want to and this is my repo anyway)
+There is no Java SDK, so the API contract is typed by hand with records and sealed types. Small wrappers such as `ApiKey`, `ModelId` and `Probability` are the kind of type that becomes a [Valhalla value class](https://openjdk.org/jeps/401) once JEP 401 ships.
 
 ![Batch tab: zero-shot intent classification on MASSIVE fr-FR](docs/batch.gif)
 
@@ -17,15 +17,13 @@ Three tabs:
 
 ## Run
 
-Requires a [Valhalla early-access JDK](https://jdk.java.net/valhalla/) (JEP 401, tested on `27-jep401ea3`),
-Maven, and a TypeSafe API key.
+Requires JDK 25 or newer, Maven, and a TypeSafe API key.
 
 ```sh
-export JAVA_HOME=/path/to/valhalla-jdk
 export TYPESAFE_API_KEY=...
 
 mvn -q package -DskipTests dependency:build-classpath -Dmdep.outputFile=cp.txt
-java --enable-preview -cp "target/classes:$(cat cp.txt)" Main
+java -cp "target/classes:$(cat cp.txt)" Main
 ```
 
 Open http://localhost:7070. Tests: `mvn test`; add `JEV_LIVE_TESTS=true` to also run the ones that call the real API.

@@ -1,6 +1,6 @@
 package api.typesafe.jev;
 
-public value record ApiKey(String value) {
+public record ApiKey(String value) {
     public ApiKey {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("API key is blank");
